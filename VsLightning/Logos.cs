@@ -47,13 +47,13 @@ namespace VsLightning
             if (!absorbedIndexes.Contains(i) && !hitIndexes.Contains(i))
             {
 
-                    thunderPath[i, thunderProgress] = travelPoints[i];
-                    if (direction == 0)
-                        Program.WriteXY(travelPoints[i], thunderProgress, "\\\n");
-                    else if (direction == 1)
-                        Program.WriteXY(travelPoints[i], thunderProgress, "/\n");
-                    else
-                        Program.WriteXY(travelPoints[i], thunderProgress, "|\n");
+                thunderPath[i, thunderProgress] = travelPoints[i];
+                if (direction == 0)
+                    Program.WriteXY(travelPoints[i], thunderProgress, "\\\n");
+                else if (direction == 1)
+                    Program.WriteXY(travelPoints[i], thunderProgress, "/\n");
+                else
+                    Program.WriteXY(travelPoints[i], thunderProgress, "|\n");
 
             }
         }
@@ -100,41 +100,44 @@ namespace VsLightning
                 {
                     RecordPath(i, 2);
                 }
-                
+
             }
         }
 
-        static bool AdvanceLightning(int maxY,int minX, int maxX)
+        static bool AdvanceLightning(int maxY, int minX, int maxX)
         {
 
             if (thunderProgress < maxY && lightningAdvanceSw.ElapsedMilliseconds > thunderSpeed)
             {
                 lightningAdvanceSw.Restart();
                 int minY = 0;
-                Thunder(minY, maxY, minX, maxX );
+                Thunder(minY, maxY, minX, maxX);
 
                 thunderProgress++;
 
             }
-            
+
             if (thunderProgress == maxY)
             {
                 thunderProgress = 0;
                 ClearThunder(maxY);
                 return true;
             }
-            
+
             return false;
         }
 
         public void PlayLogoAnimations()
         {
+
             Color altColor = Color.CadetBlue;
             Color mainColor = Color.AntiqueWhite;
             int windowH = Console.BufferHeight;
             int windowW = Console.BufferWidth;
             int endY = windowH / 2 - (JtLogo.Length / 2);
             int writeX = (windowW - JtLogo[0].Length) / 2;
+            if (writeX < 0)
+                writeX = 0;
             int writeY = 0;
             int counter = 0;
             int thunderMaxY = endY - 1;
@@ -146,14 +149,40 @@ namespace VsLightning
             lightningAdvanceSw.Start();
             thunderProgress = 0;
             Program.audio.PlayChargeUp();
-            Thread.Sleep(2000);
+            for (int i = 0; i < 10; i++)
+            {
+                Thread.Sleep(200);
+                while (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        Program.audio.StopChargeUp();
+                        Console.ForegroundColor = mainColor;
+                        Console.Clear();
+                        return;
+                    }
+                }
+            }
+            
             //Console.BackgroundColor = Color.Black;
             //Console.Clear();
             while (true)
-            { 
+            {
+                while (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        Program.audio.StopChargeUp();
+                        Console.ForegroundColor = mainColor;
+                        Console.Clear();
+                        return;
+                    }
+                }
                 Console.Clear();
                 Console.SetCursorPosition(writeX, writeY);
-                if(writeY < endY)
+                if (writeY < endY)
                 {
                     writeY++;
                     Console.ForegroundColor = altColor;
@@ -189,6 +218,17 @@ namespace VsLightning
                     }
                     while (true)
                     {
+                        while (Console.KeyAvailable)
+                        {
+                            var key = Console.ReadKey(true);
+                            if (key.Key == ConsoleKey.Enter)
+                            {
+                                Program.audio.StopChargeUp();
+                                Console.ForegroundColor = mainColor;
+                                Console.Clear();
+                                return;
+                            }
+                        }
                         if (AdvanceLightning(thunderMaxY, thunderMinX, thunderMaxX))
                         {
                             Program.audio.PlayShocker();
@@ -222,10 +262,24 @@ namespace VsLightning
                         break;
                     }
                 }
-                
+
             }
             Console.ForegroundColor = mainColor;
-            Thread.Sleep(3000);
+            for (int i = 0; i < 15; i++)
+            {
+                Thread.Sleep(200);
+                while (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        Program.audio.StopChargeUp();
+                        Console.ForegroundColor = mainColor;
+                        Console.Clear();
+                        return;
+                    }
+                }
+            }
             /*
             while (true)
             {

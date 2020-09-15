@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NAudio.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,80 +11,119 @@ namespace VsLightning
     
     public class Audio
     {
-        private string fp = Environment.CurrentDirectory;
-        private System.Windows.Media.MediaPlayer endBGM = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer menuBGM = new System.Windows.Media.MediaPlayer();
-        private List<System.Windows.Media.MediaPlayer> absorbs;
+        private static string fp = Environment.CurrentDirectory;
+        private NAudio.Vorbis.VorbisWaveReader endBGMReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./BGM.ogg");
+        private NAudio.Vorbis.VorbisWaveReader menuBGMReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./menuBGM.ogg");
+
+        private List<NAudio.Vorbis.VorbisWaveReader> absorbReaders;
+        private List<NAudio.Vorbis.VorbisWaveReader> shockerReaders;
         private int absorbIt;
+        private int shockerIt;
 
-        private System.Windows.Media.MediaPlayer stormBG = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer shock1 = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer shock2 = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer shock3 = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer treeExplosion = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer finalRound = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer playerHit = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer nomSound = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer plantingSound = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer orbLaunch = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer orbAbsorb = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer orbHit = new System.Windows.Media.MediaPlayer();
-
+        private NAudio.Vorbis.VorbisWaveReader stormBGReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./BGStorm.ogg");
+        private NAudio.Vorbis.VorbisWaveReader shock1Reader = new NAudio.Vorbis.VorbisWaveReader(fp + "./strike1.ogg");
+        private NAudio.Vorbis.VorbisWaveReader shock2Reader = new NAudio.Vorbis.VorbisWaveReader(fp + "./strike2.ogg");
+        private NAudio.Vorbis.VorbisWaveReader shock3Reader = new NAudio.Vorbis.VorbisWaveReader(fp + "./strike3.ogg");
+        private NAudio.Vorbis.VorbisWaveReader orbLaunchReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./orbLaunch.ogg");
+        private NAudio.Vorbis.VorbisWaveReader orbAbsorbReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./orbAbsorb.ogg");
+        private NAudio.Vorbis.VorbisWaveReader orbHitReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./orbHit.ogg");
 
         //Logos
-        private System.Windows.Media.MediaPlayer chargeUp = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer shocker = new System.Windows.Media.MediaPlayer();
-        private System.Windows.Media.MediaPlayer highVoltage = new System.Windows.Media.MediaPlayer();
+        private NAudio.Vorbis.VorbisWaveReader chargeUpReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./chargeUp.ogg");
+        private NAudio.Vorbis.VorbisWaveReader shockerReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./shocker.ogg");
+        private NAudio.Vorbis.VorbisWaveReader highVoltageReader = new NAudio.Vorbis.VorbisWaveReader(fp + "./highVoltage.ogg");
+
+        private NAudio.Wave.WaveOutEvent menuBGM = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent endBGM = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent shock1 = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent shock2 = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent shock3 = new NAudio.Wave.WaveOutEvent();
+
+        private NAudio.Wave.WaveOutEvent highVoltage = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent chargeUp = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent shocker = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent stormBG = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent orbLaunch = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent orbHit = new NAudio.Wave.WaveOutEvent();
+        private NAudio.Wave.WaveOutEvent orbAbsorb = new NAudio.Wave.WaveOutEvent();
+        private List<NAudio.Wave.WaveOutEvent> absorbs;
+        private List<NAudio.Wave.WaveOutEvent> shockers;
+
+        private System.Windows.Media.MediaPlayer treeExplosion = new System.Windows.Media.MediaPlayer();
+        private System.Windows.Media.MediaPlayer nomSound = new System.Windows.Media.MediaPlayer();
+        private System.Windows.Media.MediaPlayer plantingSound = new System.Windows.Media.MediaPlayer();
 
         public Audio()
         {
-            absorbIt = 0;
-            absorbs = new List<System.Windows.Media.MediaPlayer>();
+            absorbReaders = new List<NAudio.Vorbis.VorbisWaveReader>();
+            absorbs = new List<NAudio.Wave.WaveOutEvent>();
             for (int i = 0; i < 2; i++)
             {
-                absorbs.Add(new System.Windows.Media.MediaPlayer());
-                absorbs[i].Open(new System.Uri(@"" + fp + "./absorb" + (i + 1) + ".wav"));
-                absorbs[i].Volume = 0.7;
+                absorbReaders.Add(new NAudio.Vorbis.VorbisWaveReader(fp + "./absorb" + ((i % 2) + 1) + ".ogg"));
+                absorbs.Add(new NAudio.Wave.WaveOutEvent());
+                absorbs[i].Init(absorbReaders[i]);
             }
 
+            shockerReaders = new List<NAudio.Vorbis.VorbisWaveReader>();
+            shockers = new List<NAudio.Wave.WaveOutEvent>();
+            for (int i = 0; i < 2; i++)
+            {
+                shockerReaders.Add(new NAudio.Vorbis.VorbisWaveReader(fp + "./shocker.ogg"));
+                shockers.Add(new NAudio.Wave.WaveOutEvent());
+                shockers[i].Init(shockerReaders[i]);
+            }
             treeExplosion.Open(new System.Uri(@"" + fp + "./explosion.wav"));
-            finalRound.Open(new System.Uri(@"" + fp + "./finalRound.wav"));
-            playerHit.Open(new System.Uri(@"" + fp + "./shocker.wav"));
-
-            shock1.Open(new System.Uri(@"" + fp + "./strike1.wav"));
-            shock2.Open(new System.Uri(@"" + fp + "./strike2.wav"));
-            shock3.Open(new System.Uri(@"" + fp + "./strike3.wav"));
             nomSound.Open(new System.Uri(@"" + fp + "./Rise02.wav"));
             plantingSound.Open(new System.Uri(@"" + fp + "./planting.wav"));
-            endBGM.Open(new System.Uri(@"" + fp + "./BGM.wav"));
-            menuBGM.Open(new System.Uri(@"" + fp + "./BG.wav"));
-            stormBG.Open(new System.Uri(@"" + fp + "./BGStorm.wav"));
-            orbLaunch.Open(new System.Uri(@"" + fp + "./orbLaunch.wav"));
-            orbAbsorb.Open(new System.Uri(@"" + fp + "./orbAbsorb.wav"));
-            orbHit.Open(new System.Uri(@"" + fp + "./orbHit.wav"));
 
-            chargeUp.Open(new System.Uri(@"" + fp + "./chargeUp.wav"));
-            shocker.Open(new System.Uri(@"" + fp + "./shocker.wav"));
-            highVoltage.Open(new System.Uri(@"" + fp + "./highVoltage.wav"));
-            highVoltage.Volume = 0.7;
-            chargeUp.Volume = 1.0;
-            shocker.Volume = 0.2;
-            stormBG.Volume = 0.3;
-            treeExplosion.Volume = 0.25;
-            nomSound.Volume = 0.3;
-            plantingSound.Volume = 0.3;
-            orbLaunch.Volume = 0.8;
-            playerHit.Volume = 0.4;
+            shock1.Init(shock1Reader);  
+            shock2.Init(shock2Reader);
+            shock3.Init(shock3Reader);
+            highVoltage.Init(highVoltageReader);
+            chargeUp.Init(chargeUpReader);
+            shocker.Init(shockerReader);
+            stormBG.Init(stormBGReader);
+            endBGM.Init(endBGMReader);
+            menuBGM.Init(menuBGMReader);
+
+            treeExplosion.Volume = 0.25f;
+
+            nomSound.Volume = 0.3f;
+
+            plantingSound.Volume = 0.3f;
+            orbLaunch.Init(orbLaunchReader);
+            orbLaunch.Volume = 0.5f;
+
+            
 
         }
         public void PlayHighVoltage()
         {
-            highVoltage.Position = TimeSpan.Zero;
+            highVoltageReader.Position = 0;
             highVoltage.Play();
         }
+        public void PlayStormBG()
+        {
+            stormBG.Volume = 0.5f;
+            stormBGReader.Position = 0;
+            stormBG.Play();
+        }
+        public void PauseStormBG()
+        {
+            stormBG.Pause();
+        }
+        public void StopStormBG()
+        {
+            stormBG.Stop();
+        }
+        public void ContinueStormBG()
+        {
+            stormBG.Play();
+        }
+        
         public void PlayChargeUp()
         {
-            chargeUp.Position = TimeSpan.Zero;
+            chargeUpReader.Position = 0;
             chargeUp.Play();
         }
         public void StopChargeUp()
@@ -92,22 +132,32 @@ namespace VsLightning
         }
         public void PlayShocker()
         {
-            shocker.Position = TimeSpan.Zero;
-            shocker.Play();
+
+            for (int i = 0; i < shockers.Count; i++)
+            {
+                if (shockers[i].PlaybackState == NAudio.Wave.PlaybackState.Stopped)
+                {
+                    shockerReaders[i].Position = 0;
+                    shockers[i].Play();
+                    return;
+                }
+
+            }
+
         }
         public void PlayOrbHit()
         {
-            orbHit.Position = TimeSpan.Zero;
+            orbHitReader.Position = 0;
             orbHit.Play();
         }
         public void PlayOrbLaunch()
         {
-            orbLaunch.Position = TimeSpan.Zero;
+            orbLaunchReader.Position = 0;
             orbLaunch.Play();
         }
         public void PlayOrbAbsorb()
         {
-            orbAbsorb.Position = TimeSpan.Zero;
+            orbAbsorbReader.Position = 0;
             orbAbsorb.Play();
         }
         public void PlayPlantingSound()
@@ -120,51 +170,52 @@ namespace VsLightning
             nomSound.Position = TimeSpan.Zero;
             nomSound.Play();
         }
-        public void PlayStormBG()
-        {
-            stormBG.Position = TimeSpan.Zero;
-            stormBG.Play();
-        }
-        public void PauseStormBG()
-        {
-            stormBG.Pause();
-        }
+        
         public void PlayEndBGM()
         {
-            endBGM.Position = TimeSpan.Zero;
+            endBGMReader.Position = 0;
             endBGM.Play();
         }
         public void StopEndBGM()
         {
             endBGM.Stop();
         }
-        public void ContinueStormBG()
-        {
-            stormBG.Play();
-        }
+
         public void PlayAbsorb()
         {
-            absorbs[absorbIt].Position = TimeSpan.Zero;
+            for (int i = 0; i < absorbs.Count; i++)
+            {
+                if (absorbs[i].PlaybackState == NAudio.Wave.PlaybackState.Stopped)
+                {
+                    absorbReaders[i].Position = 0;
+                    absorbs[i].Play();
+                    return;
+                }
+
+            }
+            /*
+            absorbReaders[absorbIt].Position = 0;
             absorbs[absorbIt].Play();
             absorbIt++;
             if(absorbIt == absorbs.Count)
             {
                 absorbIt = 0;
             }
+            */
         }
         public void PlayShock1()
         {
-            shock1.Position = TimeSpan.Zero;
+            shock1Reader.Position = 0;
             shock1.Play();
         }
         public void PlayShock2()
         {
-            shock2.Position = TimeSpan.Zero;
+            shock2Reader.Position = 0;
             shock2.Play();
         }
         public void PlayShock3()
         {
-            shock3.Position = TimeSpan.Zero;
+            shock3Reader.Position = 0;
             shock3.Play();
         }
 
@@ -173,20 +224,16 @@ namespace VsLightning
             treeExplosion.Position = TimeSpan.Zero;
             treeExplosion.Play();
         }
-        public void PlayPlayerHit()
-        {
-            playerHit.Position = TimeSpan.Zero;
-            playerHit.Play();
-        }
 
         public void PlayMenuBGM()
         {
-            menuBGM.Position = TimeSpan.Zero;
+            menuBGMReader.Position = 0;
             menuBGM.Play();
         }
         public void StopMenuBGM()
         {
             menuBGM.Stop();
         }
+        
     }
 }

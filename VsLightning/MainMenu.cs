@@ -17,6 +17,7 @@ namespace VsLightning
 
         }
 
+        
         public void Intro()
         {
             string[] titleText = new string[7];
@@ -38,108 +39,171 @@ namespace VsLightning
             controls[4] = "The s key initiates a sprint that will last a certain duration. If already sprinting, it allows you to stop quickly";
             controls[5] = "If the orb skill is acquired, it can be launched with the a key in the left direction, or with the d key to the right direction";
 
-
+            string[] menuBGMCreditStrs = { "Menu BGM: Whitesand - Oblivion", "Licensed under a Creative Commons license" };
+            string[] endBGMCreditStrs = { "Victory screen BGM: Ross Bugden - Run", "Licensed under a Creative Commons license" };
             int windowH = Console.BufferHeight;
             int windowW = Console.BufferWidth;
-            int writeX = (windowW - titleText[0].Length) / 2;
-            int writeY = windowH / 6;
-            for (int i = 0; i < 7; i++)
+
+            void DisplayCredits()
             {
-                Program.WriteXY(writeX, writeY + i, titleText[i]);
+                Console.Clear();
+                int x = (windowW - menuBGMCreditStrs[1].Length) / 2;
+                int y = windowH / 3;
+
+                Program.WriteXY(x,y, menuBGMCreditStrs[0]);
+                Program.WriteXY(x, y + 1, menuBGMCreditStrs[1]);
+
+                Program.WriteXY(x, y + 5, endBGMCreditStrs[0]);
+                Program.WriteXY(x, y + 6, endBGMCreditStrs[1]);
+
+                while (true)
+                {
+                    var key = Console.ReadKey(true);
+                    if(key.Key == ConsoleKey.Enter || key.Key == ConsoleKey.Escape)
+                    {
+                        break;
+                    }
+                }
+                Console.Clear();
             }
-            writeY = windowH / 2 - (controls.Length / 2);
-            writeX = (windowW - controls[5].Length) / 2;
-            for (int i = 0; i < 6; i++)
-            {
-                Program.WriteXY(writeX, writeY + i, controls[i]);
-            }
 
-            
-
-            string normalModeStr = "NORMAL MODE - Lightning gets progressively more dangerous. You can upgrade your abilities to survive until the skies clear up";
-            string neverendingModeStr = "NEVERENDING MODE - Test your might against the fury of the Thunder God, it never ends";
-            string quitStr = "QUIT GAME";
-
-            //writeX = (windowW - normalModeStr.Length) / 2;
-            writeY = 2 * windowH / 3;
-
-            Color selectedColor = Color.CadetBlue;
-            Console.ForegroundColor = selectedColor;
-            Program.WriteXY(writeX, writeY, normalModeStr);
-            Console.ForegroundColor = Color.AntiqueWhite;
-            Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
-            Program.WriteXY(writeX, writeY + 8, quitStr);
-
-            int menuItem = 0;
             while (true)
             {
-                var key = Console.ReadKey(true);
-                if (key.Key == ConsoleKey.Enter)
+                int writeX = (windowW - titleText[0].Length) / 2;
+                if (writeX < 0)
+                    writeX = 0;
+                int writeY = windowH / 6;
+                for (int i = 0; i < 7; i++)
                 {
-                    break;
+                    titleText[i] = titleText[i].Truncate(windowW - 1);
+                    Program.WriteXY(writeX, writeY + i, titleText[i]);
                 }
-                if (key.Key == ConsoleKey.UpArrow)
+                writeY = windowH / 2 - (controls.Length / 2);
+                writeX = (windowW - controls[5].Length) / 2;
+                if (writeX < 0)
+                    writeX = 0;
+
+                for (int i = 0; i < 6; i++)
                 {
+
+                    controls[i] = controls[i].Truncate(windowW - 1);
+                    Program.WriteXY(writeX, writeY + i, controls[i]);
+                }
+
+
+
+
+                string normalModeStr = "NORMAL MODE - Lightning gets progressively more dangerous. You can upgrade your abilities to survive until the skies clear up";
+                string neverendingModeStr = "NEVERENDING MODE - Test your might against the fury of the Thunder God, it never ends";
+                string creditsStr = "CREDITS";
+                string quitStr = "QUIT GAME";
+
+                normalModeStr = normalModeStr.Truncate(windowW - 1);
+                neverendingModeStr = neverendingModeStr.Truncate(windowW - 1);
+                //writeX = (windowW - normalModeStr.Length) / 2;
+                writeY = 2 * windowH / 3;
+
+                Color selectedColor = Color.CadetBlue;
+                Console.ForegroundColor = selectedColor;
+                Program.WriteXY(writeX, writeY, normalModeStr);
+                Console.ForegroundColor = Color.AntiqueWhite;
+                Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
+                Program.WriteXY(writeX, writeY + 8, creditsStr);
+                Program.WriteXY(writeX, writeY + 12, quitStr);
+
+                int menuItem = 0;
+                while (Console.KeyAvailable)
+                {
+                    Console.ReadKey(true);
+                }
+                while (true)
+                {
+                    var key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        break;
+                    }
+                    if (key.Key == ConsoleKey.UpArrow)
+                    {
+                        if (menuItem == 0)
+                        {
+                            menuItem = 3;
+                        }
+                        else
+                        {
+                            menuItem--;
+                        }
+                    }
+                    else if (key.Key == ConsoleKey.DownArrow)
+                    {
+                        if (menuItem == 3)
+                        {
+                            menuItem = 0;
+                        }
+
+                        else
+                        {
+                            menuItem++;
+                        }
+                    }
+
                     if (menuItem == 0)
                     {
-                        menuItem = 2;
+                        Console.ForegroundColor = selectedColor;
+                        Program.WriteXY(writeX, writeY, normalModeStr);
+                        Console.ForegroundColor = Color.AntiqueWhite;
                     }
                     else
                     {
-                        menuItem--;
+                        Program.WriteXY(writeX, writeY, normalModeStr);
                     }
-                }
-                else if (key.Key == ConsoleKey.DownArrow)
-                {
+                    if (menuItem == 1)
+                    {
+                        Console.ForegroundColor = selectedColor;
+                        Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
+                        Console.ForegroundColor = Color.AntiqueWhite;
+                    }
+                    else
+                    {
+                        Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
+                    }
                     if (menuItem == 2)
                     {
-                        menuItem = 0;
+                        Console.ForegroundColor = selectedColor;
+                        Program.WriteXY(writeX, writeY + 8, creditsStr);
+                        Console.ForegroundColor = Color.AntiqueWhite;
                     }
-
                     else
                     {
-                        menuItem++;
+                        Program.WriteXY(writeX, writeY + 8, creditsStr);
                     }
-                }
+                    if (menuItem == 3)
+                    {
+                        Console.ForegroundColor = selectedColor;
+                        Program.WriteXY(writeX, writeY + 12, quitStr);
+                        Console.ForegroundColor = Color.AntiqueWhite;
+                    }
+                    else
+                    {
+                        Program.WriteXY(writeX, writeY + 12, quitStr);
+                    }
 
-                if(menuItem == 0)
+                }
+                if (menuItem == 3)
                 {
-                    Console.ForegroundColor = selectedColor;
-                    Program.WriteXY(writeX, writeY, normalModeStr);
-                    Console.ForegroundColor = Color.AntiqueWhite;
+                    System.Environment.Exit(1);
+                }
+                else if (menuItem == 2)
+                {
+                    DisplayCredits();
                 }
                 else
                 {
-                    Program.WriteXY(writeX, writeY, normalModeStr);
+                    Program.gameMode = (Program.GameMode)menuItem;
+                    Console.Clear();
+                    return;
                 }
-                if (menuItem == 1)
-                {
-                    Console.ForegroundColor = selectedColor;
-                    Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
-                    Console.ForegroundColor = Color.AntiqueWhite;
-                }
-                else
-                {
-                    Program.WriteXY(writeX, writeY + 4, neverendingModeStr);
-                }
-                if (menuItem == 2)
-                {
-                    Console.ForegroundColor = selectedColor;
-                    Program.WriteXY(writeX, writeY + 8, quitStr);
-                    Console.ForegroundColor = Color.AntiqueWhite;
-                }
-                else
-                {
-                    Program.WriteXY(writeX, writeY + 8, quitStr);
-                }
-
             }
-            if(menuItem == 2)
-            {
-                System.Environment.Exit(1);
-            }
-            Program.gameMode = (Program.GameMode)menuItem;
-            Console.Clear();
         }
     }
 }

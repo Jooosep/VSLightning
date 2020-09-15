@@ -11,6 +11,7 @@ using System.Drawing;
 using Console = Colorful.Console;
 using System.Reflection;
 using Cursor = System.Windows.Input.Cursor;
+using System.Runtime.Remoting.Messaging;
 
 namespace VsLightning
 {
@@ -23,6 +24,13 @@ namespace VsLightning
             if (value < inclusiveMinimum) { return inclusiveMinimum; }
             if (value > inclusiveMaximum) { return inclusiveMaximum; }
             return value;
+        }
+
+        public static string Truncate(this string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
+
         }
     }
 
@@ -206,13 +214,20 @@ namespace VsLightning
         {
             sprintCooldownSw.Stop();
             seedCooldownSw.Stop();
-            shieldCooldownSw.Stop();
+            if(shieldEnabled)
+                shieldCooldownSw.Stop();
+            if (orbPerk)
+                orbCooldownSw.Stop();
+
         }
         private static void ResumeStopWatches()
         {
             sprintCooldownSw.Start();
             seedCooldownSw.Start();
-            shieldCooldownSw.Start();
+            if(shieldEnabled)
+                shieldCooldownSw.Start();
+            if(orbPerk)
+                orbCooldownSw.Start();
         }
         private static void InitTexts()
         {
@@ -263,9 +278,12 @@ namespace VsLightning
                 {
                     PauseStopWatches();
                     WriteXY(choiceMenuXPos, choiceMenuYPos, "Select an upgrade by pressing a number key");
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 1, "1) " + choice0[0]);
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 2, "2) " + choice0[1]);
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 3, "3) " + choice0[2]);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        choice0[i] = choice0[i].Truncate(windowWidth - 1);
+                        WriteXY(choiceMenuXPos, choiceMenuYPos + i + 1, (i + 1).ToString() + ") " + choice0[i]);
+                    }
+
                     while (Console.KeyAvailable)
                     {
                         Console.ReadKey(true);
@@ -322,9 +340,11 @@ namespace VsLightning
                     PauseStopWatches();
                     aegisLaunched = false;
                     WriteXY(choiceMenuXPos, choiceMenuYPos, "Select an upgrade by pressing a number key");
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 1, "1) " + choice1[0]);
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 2, "2) " + choice1[1]);
-                    WriteXY(choiceMenuXPos, choiceMenuYPos + 3, "3) " + choice1[2]);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        choice1[i] = choice1[i].Truncate(windowWidth - 1);
+                        WriteXY(choiceMenuXPos, choiceMenuYPos + i + 1, (i + 1).ToString() + ") " + choice1[i]);
+                    }
                     while (Console.KeyAvailable)
                     {
                         Console.ReadKey(true);
@@ -378,6 +398,7 @@ namespace VsLightning
                     audio.PauseStormBG();
                     for (int i = 0; i < 3; i++)
                     {
+                        choice2[i] = choice2[i].Truncate(windowWidth - 1);
                         WriteXY(choiceMenuXPos, choiceMenuYPos + 1 + i, (i + 1).ToString() + ") " + choice2[i]);
                     }
 
@@ -424,6 +445,7 @@ namespace VsLightning
                     WriteXY(choiceMenuXPos, choiceMenuYPos, "Select an upgrade by pressing a number key");
                     for (int i = 0; i < 2; i++)
                     {
+                        choice3[i] = choice3[i].Truncate(windowWidth - 1);
                         WriteXY(choiceMenuXPos, choiceMenuYPos + 1 + i, (i + 1).ToString() + ") " + choice3[i]);
                     }
                     while (Console.KeyAvailable)
@@ -489,7 +511,7 @@ namespace VsLightning
                     aegisTimer.Dispose();
                     Console.BackgroundColor = Color.Aquamarine;
 
-                    Console.ForegroundColor = Color.FromArgb(35,35,35);
+                    Console.ForegroundColor = Color.FromArgb(35, 35, 35);
                     audio.PauseStormBG();
                     audio.PlayEndBGM();
                     Thread.Sleep(1000);
@@ -504,6 +526,7 @@ namespace VsLightning
                     }
                     for (int i = 0; i < 7; i++)
                     {
+                        endText[i] = endText[i].Truncate(windowWidth - 1);
                         WriteXY(maxX / 3, maxY / 3 + i, endText[i]);
 
                         Thread.Sleep(500);
@@ -514,7 +537,7 @@ namespace VsLightning
                     string proceedString = "PRESS ENTER TO RETURN TO MAIN MENU";
                     for (int i = 0; i < congratulatoryString.Length; i++)
                     {
-                        WriteXY(maxX / 3, maxY / 2, congratulatoryString.Substring(0,i + 1));
+                        WriteXY(maxX / 3, maxY / 2, congratulatoryString.Substring(0, i + 1));
                         Thread.Sleep(50);
                     }
                     Thread.Sleep(300);
@@ -531,7 +554,7 @@ namespace VsLightning
                     while (true)
                     {
                         var key = Console.ReadKey(true);
-                        if(key.Key == ConsoleKey.Enter)
+                        if (key.Key == ConsoleKey.Enter)
                         {
                             endGameTrigger = true;
                             audio.StopEndBGM();
@@ -543,7 +566,7 @@ namespace VsLightning
 
                 }
             }
-            
+
         }
         static int AegisThrow()
         {
@@ -614,7 +637,7 @@ namespace VsLightning
                     }
                 }
             }
-            
+
             if (direction == false)
             {
                 for (int i = 1; i < currentPosition - 2; i++)
@@ -773,6 +796,48 @@ namespace VsLightning
                 WriteXY(currentPosition - 5, maxY - 4, "          ");
                 WriteXY(currentPosition - 4, maxY - 5, "        ");
             }
+
+            if (thunderProgress > maxY - 6)
+            {
+                for (int i = 0; i < thunderVolume; i++)
+                {
+                    float positionCheckLength = 7;
+                    if (moveSpeed > baseMoveSpeed || sprintCooldownSw.ElapsedMilliseconds < 100)
+                        positionCheckLength = 12;
+                    if (currentPosition + positionCheckLength > travelPoints[i] && currentPosition - positionCheckLength < travelPoints[i])
+                    {
+                        if (!absorbedIndexes.Contains(i) && !hitIndexes.Contains(i))
+                        {
+                            for (int j = maxY - 5 - thunderInitialY; j < thunderProgress - thunderInitialY; j++)
+                            {
+                                int thunderPos = thunderPath[i, j];
+                                if (!(currentPosition + 2 > thunderPos && currentPosition - 2 < thunderPos))
+                                {
+                                    if (!lightningRunnerPerk)
+                                    {
+                                        if (currentPosition > thunderPos)
+                                            WriteXY(thunderPos, j + thunderInitialY, "\\");
+                                        else if (currentPosition < thunderPos)
+                                            WriteXY(thunderPos, j + thunderInitialY, "/");
+                                        else
+                                            WriteXY(thunderPos, j + thunderInitialY, "|");
+                                    }
+                                    else
+                                    {
+                                        if (travelPoints[i] > thunderPos)
+                                            WriteXY(thunderPos, j + thunderInitialY, "\\");
+                                        else if (travelPoints[i] < thunderPos)
+                                            WriteXY(thunderPos, j + thunderInitialY, "/");
+                                        else
+                                            WriteXY(thunderPos, j + thunderInitialY, "|");
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+            }
             /*
             if(currentPosition > maxX - 12)
             {
@@ -914,13 +979,13 @@ namespace VsLightning
             if (!absorbedIndexes.Contains(i) && !hitIndexes.Contains(i))
             {
 
-                thunderPath[i, thunderProgress - 3] = travelPoints[i];
+                thunderPath[i, thunderProgress - thunderInitialY] = travelPoints[i];
                 if (direction == 0)
-                    WriteXY(travelPoints[i], thunderProgress, "\\\n");
+                    WriteXY(travelPoints[i], thunderProgress, "\\");
                 else if (direction == 1)
-                    WriteXY(travelPoints[i], thunderProgress, "/\n");
+                    WriteXY(travelPoints[i], thunderProgress, "/");
                 else
-                    WriteXY(travelPoints[i], thunderProgress, "|\n");
+                    WriteXY(travelPoints[i], thunderProgress, "|");
 
             }
         }
@@ -986,9 +1051,9 @@ namespace VsLightning
                         }
                     }
                 }
-                if(thunderVolume > 6)
+                if (thunderVolume > 6)
                 {
-                    travelPoints[thunderVolume - 1] = currentPosition; 
+                    travelPoints[thunderVolume - 1] = currentPosition;
                 }
             }
 
@@ -1023,7 +1088,7 @@ namespace VsLightning
                             RecordPath(i, 2);
                         }
                     }
-                    else if(aegisLaunched && Math.Abs(aegisPosition - travelPoints[i]) < 70)
+                    else if (aegisLaunched && Math.Abs(aegisPosition - travelPoints[i]) < 70)
                     {
                         if (aegisPosition > travelPoints[i])
                         {
@@ -1169,7 +1234,7 @@ namespace VsLightning
                     {
                         bool lastPointHit = travelPoints[i] < currentPosition + 3 && travelPoints[i] > currentPosition - 3;
                         bool upperPositionHit = false;
-                        if(thunderProgress >= maxY -3)
+                        if (thunderProgress >= maxY - 3)
                             upperPositionHit = thunderPath[i, maxY - 7] < currentPosition + 3 && thunderPath[i, maxY - 7] > currentPosition - 3;
                         bool middlePositionHit = false;
                         if (thunderProgress >= maxY - 2)
@@ -1196,7 +1261,7 @@ namespace VsLightning
                             {
                                 if (!hitIndexes.Contains(i))
                                 {
-                                    audio.PlayPlayerHit();
+                                    audio.PlayShocker();
                                     thunderGuard--;
                                     thunderGuardDisplay.Update(thunderGuard.ToString());
                                     hitIndexes.Add(i);
@@ -1340,13 +1405,13 @@ namespace VsLightning
             }
             else
             {
-                if(gameMode == GameMode.NORMAL)
+                if (gameMode == GameMode.NORMAL)
                     if (sprintCdDisplay.currentValue != "ACTIVE")
                         sprintCdDisplay.Update("ACTIVE");
             }
-            if(orbPerk)
+            if (orbPerk)
             {
-                if(aegisLaunched)
+                if (aegisLaunched)
                 {
                     if (orbCdDisplay.currentValue != "ACTIVE")
                         orbCdDisplay.Update("ACTIVE");
@@ -1377,100 +1442,128 @@ namespace VsLightning
 
         static void SetInitialValues()
         {
+            Console.Clear();
+            GameBorders();
             seedCooldown = seedCooldownBV;
             shieldCooldown = shieldCooldownBV;
             treeMaxHealth = treeMaxHealthBV;
-            orbCdDisplay.Hide();
-            Console.Clear();
+            orbCdDisplay.Hide(); 
             trees.Clear();
             shieldEnabled = true;
             shieldCdDisplay.Write();
+
             baseMoveSpeed = 1000;
             moveAmount = 0;
+            aegisMoveAmount = 0;
             move = false;
+
             orbPerk = false;
+            multipleAbsorbtion = false;
+            harvesterPerk = 1;
+
             if (gameMode == GameMode.NORMAL)
             {
                 sprintSpeed = 3000;
+                moveSpeed = baseMoveSpeed;
+
                 seedCdDisplay.Write();
                 sprintCdDisplay.Write();
                 sprintCooldownSw.Restart();
                 seedCooldownSw.Restart();
+
                 seedEnabled = true;
                 lightningRunnerPerk = false;
+
                 thunderFrequency = thunderFrequencyBV;
                 thunderSpeed = thunderSpeedBV;
                 thunderVolume = thunderVolumeBV;
+
                 thunderGuard = 1;
-                moveSpeed = baseMoveSpeed;
             }
             else
             {
+
                 sprintCooldownSw.Reset();
                 seedCooldownSw.Reset();
                 seedEnabled = false;
+
                 sprintSpeed = 5000;
                 moveSpeed = sprintSpeed;
+
                 lightningRunnerPerk = true;
+
                 thunderVolume = 9;
                 thunderSpeed = 7;
                 thunderFrequency = 330;
+
                 thunderGuard = 10;
             }
+            thunderGuardDisplay.Write();
+            thunderGuardDisplay.Update(thunderGuard.ToString());
+
             points = 0;
             scoreDisplay.Write();
-            thunderGuardDisplay.Write();
-
+            scoreDisplay.Update(points.ToString());
+            
             shieldCooldownSw.Restart();
             lightningAdvanceSw.Restart();
             thunderLaunched = false;
             lightningPausedSw.Restart();
-            GameBorders();
 
-            UpdateCooldowns();
+            
+
             audio.PlayStormBG();
 
             dead = false;
             currentPosition = maxX / 2;
             ClearHero(currentPosition);
-            MoveHero(currentPosition);
-            scoreDisplay.Update(points.ToString());
-            
-            thunderGuardDisplay.Update(thunderGuard.ToString());
+            MoveHero(currentPosition);    
 
             thunderProgress = thunderInitialY;
-
+            ClearThunder();
             absorbedIndexes.Clear();
             hitIndexes.Clear();
             thunderRemainCounter = 0;
             lightningRemainSw.Reset();
+
             orbAbsorbedIndexes.Clear();
             orbEnergyGathered = 0;
             aegisLaunched = false;
             absorbed = false;
-            multipleAbsorbtion = false;
-            
-            harvesterPerk = 1;
+
             runDelayTimer = new Timer(AllowMove, null, 17, Timeout.Infinite);
             aegisTimer = new Timer(AegisMove, null, 5, Timeout.Infinite);
+
+            
+            UpdateCooldowns();
         }
         static void OnGameEnd()
         {
             runDelayTimer.Dispose();
             aegisTimer.Dispose();
-            
+
             int writeX = windowWidth / 3;
             int writeY = windowHeight / 3;
             string infoStr = "YOU SURVIVED " + points + " STRIKES BEFORE FRYING.";
             string proceedStr = "PRESS ENTER TO PLAY AGAIN OR ESC TO RETURN TO THE MAIN MENU";
             for (int i = 0; i < infoStr.Length; i++)
             {
+                if (GetAsyncKeyState(13) == Int16.MinValue)
+                {
+                    WriteXY(writeX, writeY, infoStr);
+                    break;
+                }
                 WriteXY(writeX, writeY, infoStr.Substring(0, i + 1));
                 Thread.Sleep(20);
             }
             Thread.Sleep(200);
             for (int i = 0; i < proceedStr.Length; i++)
             {
+                if (GetAsyncKeyState(13) == Int16.MinValue)
+                {
+                    WriteXY(writeX, writeY + 2, proceedStr);
+                    break;
+                }
                 WriteXY(writeX, writeY + 2, proceedStr.Substring(0, i + 1));
                 Thread.Sleep(20);
             }
@@ -1481,11 +1574,11 @@ namespace VsLightning
             while (true)
             {
                 var key = Console.ReadKey(true);
-                if(key.Key == ConsoleKey.Enter)
+                if (key.Key == ConsoleKey.Enter)
                 {
                     break;
                 }
-                else if(key.Key == ConsoleKey.Escape)
+                else if (key.Key == ConsoleKey.Escape)
                 {
                     endGameTrigger = true;
                     return;
@@ -1496,9 +1589,10 @@ namespace VsLightning
         }
         static void OnThunderEnd()
         {
+            thunderProgress = thunderInitialY;
             ClearThunder();
             thunderLaunched = false;
-            thunderProgress = minY + 1;
+
             lightningPausedSw.Restart();
             points++;
             scoreDisplay.Update(points.ToString());
@@ -1510,7 +1604,46 @@ namespace VsLightning
             lightningRemainSw.Reset();
             orbAbsorbedIndexes.Clear();
             absorbed = false;
-            
+
+        }
+
+        static void PauseMenu()
+        {
+            PauseStopWatches();
+            audio.PauseStormBG();
+            while (Console.KeyAvailable)
+            {
+                Console.ReadKey(true);
+            }
+            WriteXY(choiceMenuXPos, choiceMenuYPos, "Game paused, choose option by pressing number key");
+            WriteXY(choiceMenuXPos, choiceMenuYPos + 1, "1) Resume");
+            WriteXY(choiceMenuXPos, choiceMenuYPos + 2, "2) Quit to main menu");
+            while (true)
+            {
+                var key = Console.ReadKey(true);
+                if (int.TryParse(key.KeyChar.ToString(), out int num))
+                {
+                    if (num > 0 && num < 3)
+                    {
+                        if (num == 1)
+                        {
+                            ResumeStopWatches();
+                            audio.ContinueStormBG();
+                            thunderProgress = thunderInitialY;
+                            ClearThunder();
+                            moveAmount = 0;
+                            if (orbPerk)
+                                aegisMoveAmount = 0;
+                            return;
+                        }
+                        else
+                        {
+                            endGameTrigger = true;
+                            return;
+                        }
+                    }
+                }
+            }
         }
         static void AllowWriteCooldowns(Object stateInfo, EventArgs e)
         {
@@ -1692,8 +1825,6 @@ namespace VsLightning
         [DllImport("user32.dll")]
         static extern bool ClipCursor(ref RECT lpRect);
 
-        [DllImport("user32.dll")]
-        static extern IntPtr LoadCursorFromFile(string lpFileName);
 
         [DllImport("user32.dll")]
         public static extern IntPtr SetCursor(IntPtr handle);
@@ -1701,12 +1832,46 @@ namespace VsLightning
         [DllImport("user32.dll", SetLastError = true)]
         static extern bool GetWindowRect(IntPtr hwnd, out RECT lpRect);
 
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetConsoleMode(
+            IntPtr hConsoleHandle,
+            out int lpMode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleMode(
+            IntPtr hConsoleHandle,
+            int ioMode);
+
+        const int QuickEditMode = 64;
+
+        const int ExtendedFlags = 128;
+
+        const int STD_INPUT_HANDLE = -10;
+
+        private static void DisableQuickEdit()
+        {
+            IntPtr consoleHandle = GetStdHandle(STD_INPUT_HANDLE);
+            if (!GetConsoleMode(consoleHandle, out int mode))
+            {
+                Console.WriteLine(Marshal.GetLastWin32Error());
+                throw new Exception();
+            }
+
+            mode = mode & ~(QuickEditMode | ExtendedFlags);
+
+            if (!SetConsoleMode(consoleHandle, mode))
+            {
+                Console.WriteLine("error");
+                // error setting console mode.
+            }
+        }
+
         private const int HIDE = 0;
         private const int MAXIMIZE = 3;
         private const int MINIMIZE = 6;
         private const int RESTORE = 9;
 
-
+        static int escKeyCode = 27;
         static int rightArrowKeyCode = 39;
         static int leftArrowKeyCode = 37;
         static int upArrowKeyCode = 38;
@@ -1716,8 +1881,11 @@ namespace VsLightning
         static int aArrowKeyCode = 65;
 
         static bool allowCooldownsReady = false;
+
+
         static void Main(string[] args)
         {
+            DisableQuickEdit();
             Console.OutputEncoding = System.Text.Encoding.UTF8;
             /*
             for (int i = 0; i < 10000; i++)
@@ -1730,6 +1898,7 @@ namespace VsLightning
             InitTexts();
 
             IntPtr ThisConsole = GetConsoleWindow();
+
             ShowWindow(ThisConsole, MAXIMIZE);
             IntPtr hConsole = GetStdHandle(-11);   // get console handle
             COORD xy = new COORD(100, 100);
@@ -1740,11 +1909,11 @@ namespace VsLightning
 
             Console.CursorVisible = false;
 
-            
+
 
             int moveRenewDelay = 30;
             int moveDuration = 50;
-            
+
             //Timer updateLightning = new Timer(UpdateMove, null, 30, 30);
             windowHeight = Console.WindowHeight;
             windowWidth = Console.WindowWidth;
@@ -1790,7 +1959,7 @@ namespace VsLightning
                 audio.StopMenuBGM();
 
                 SetInitialValues();
-                
+                Thread.Sleep(500);
                 cooldownUpdateTimer.Close();
                 cooldownUpdateTimer = new System.Timers.Timer(300);
                 cooldownUpdateTimer.Elapsed += AllowWriteCooldowns;
@@ -1816,7 +1985,7 @@ namespace VsLightning
                 endGameTrigger = false;
                 while (true)
                 {
-
+                    
                     if (moveRememberSw.ElapsedMilliseconds > moveRenewDelay)
                     {
                         if (GetAsyncKeyState(rightArrowKeyCode) == Int16.MinValue)
@@ -1996,6 +2165,10 @@ namespace VsLightning
                     }
 
                     AdvanceLightning();
+                    if (GetAsyncKeyState(escKeyCode) == Int16.MinValue)
+                    {
+                        PauseMenu();
+                    }
                     if (endGameTrigger)
                     {
                         break;
@@ -2006,9 +2179,9 @@ namespace VsLightning
                         UpdateCooldowns();
                         cooldownUpdateTimer.Enabled = true;
                     }
-                    
+
                 }
-                audio.PauseStormBG();
+                audio.StopStormBG();
             }
         }
     }
